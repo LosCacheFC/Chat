@@ -3,10 +3,13 @@ package chat;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 
+import com.google.gson.Gson;
+
 public class EscuchaMensajes extends Thread {
 
 	private Cliente cliente;
 	private ObjectInputStream entrada;
+	private final Gson gson = new Gson();
 
 	public EscuchaMensajes(Cliente cliente) {
 		this.cliente = cliente;
@@ -16,7 +19,7 @@ public class EscuchaMensajes extends Thread {
 	public void run() {
 		try {
 			// Lectura de sala
-			System.out.println(entrada.readObject());
+			System.out.println((String) entrada.readObject());
 			cliente.setSala((String) entrada.readObject());
 
 			// Lectura de nick
@@ -29,7 +32,7 @@ public class EscuchaMensajes extends Thread {
 			Paquete paquete;
 
 			while (true) {
-				paquete = (Paquete) entrada.readObject();
+				paquete = gson.fromJson((String) entrada.readObject(), Paquete.class);
 				switch (paquete.getComando()) {
 				case "conectado":
 					System.out.println(paquete.getMensaje());
@@ -45,7 +48,9 @@ public class EscuchaMensajes extends Thread {
 				}
 			}
 
-		} catch (ClassNotFoundException | IOException e) {
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		}
 	}

@@ -5,12 +5,16 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
+
 public class AtencionCliente extends Thread {
 
 	private final Socket socket;
 	private final ObjectInputStream entrada;
 	private final ObjectOutputStream salida;
 	private String salaCliente;
+	private final Gson gson = new Gson();
 
 	public AtencionCliente(String ip, Socket socket, ObjectInputStream entrada, ObjectOutputStream salida) {
 		this.socket = socket;
@@ -24,7 +28,7 @@ public class AtencionCliente extends Thread {
 			Paquete paquete;
 			String mensaje;
 
-			while (!(paquete = (Paquete) entrada.readObject()).getComando().equals("desconectar"))
+			while( !((paquete = gson.fromJson((String) entrada.readObject(), Paquete.class)).getComando().equals("desconectar")))
 				switch (paquete.getComando()) {
 				case "setSala":
 					salida.writeObject("Seleccione la sala de chat (1 - 2 - 3): ");
@@ -44,14 +48,14 @@ public class AtencionCliente extends Thread {
 				case "conectado":
 					for (AtencionCliente conectado : Servidor.getConectados()) {
 						if (paquete.getSala().equals(conectado.salaCliente))
-							conectado.salida.writeObject(paquete);
+							conectado.salida.writeObject(gson.toJson(paquete));
 					}
 					break;
 
 				case "mensaje":
 					for (AtencionCliente conectado : Servidor.getConectados()) {
 						if (paquete.getSala().equals(conectado.salaCliente) && !conectado.equals(this))
-							conectado.salida.writeObject(paquete);
+							conectado.salida.writeObject(gson.toJson(paquete));
 					}
 					break;
 				}
@@ -66,14 +70,14 @@ public class AtencionCliente extends Thread {
 
 			for (AtencionCliente conectado : Servidor.getConectados()) {
 				if (paquete.getSala().equals(conectado.salaCliente))
-					conectado.salida.writeObject(paquete);
+					conectado.salida.writeObject(gson.toJson(paquete));
 			}
 
 			System.out.println(paquete.getIp() + " se ha desconectado.");
 
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
 		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		}
 	}

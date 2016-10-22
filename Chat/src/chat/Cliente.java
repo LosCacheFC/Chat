@@ -8,6 +8,8 @@ import java.net.UnknownHostException;
 import java.util.Scanner;
 import java.util.concurrent.Semaphore;
 
+import com.google.gson.Gson;
+
 public class Cliente extends Thread {
 
 	private Socket cliente;
@@ -17,6 +19,7 @@ public class Cliente extends Thread {
 	private ObjectInputStream entrada;
 	private ObjectOutputStream salida;
 	private Semaphore semaforo;
+	private final Gson gson = new Gson();
 
 	public Cliente(String ip, int puerto) throws UnknownHostException, IOException {
 		cliente = new Socket(ip, puerto);
@@ -34,13 +37,13 @@ public class Cliente extends Thread {
 			Paquete paquete = new Paquete(null, null, miIp, null, "setSala");
 
 			// Ingreso a la sala
-			salida.writeObject(paquete);
+			salida.writeObject(gson.toJson(paquete));
 			salida.writeObject(scaner.nextLine());
 
 			// Seleccion de nick
 			salida.reset();
 			paquete.setComando("setNick");
-			salida.writeObject(paquete);
+			salida.writeObject(gson.toJson(paquete));
 			salida.writeObject(scaner.nextLine());
 
 			// Espero a que el nick y la sala hayan sido seteados
@@ -49,7 +52,7 @@ public class Cliente extends Thread {
 			paquete.setComando("conectado");
 			paquete.setMensaje(nick + " se ha conectado");
 			paquete.setSala(sala);
-			salida.writeObject(paquete);
+			salida.writeObject(gson.toJson(paquete));
 
 			paquete.setComando("mensaje");
 			paquete.setIp(miIp);
@@ -60,12 +63,12 @@ public class Cliente extends Thread {
 
 				if (mensaje.equals("_.desconectar")) {
 					paquete.setComando("desconectar");
-					salida.writeObject(paquete);
+					salida.writeObject(gson.toJson(paquete));
 					System.out.println("Te has desconectado del servidor");
 					scaner.close();
 				} else {
 					paquete.setMensaje(mensaje);
-					salida.writeObject(paquete);
+					salida.writeObject(gson.toJson(paquete));
 				}
 			}
 
